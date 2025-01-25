@@ -11,6 +11,8 @@ struct OrderNode
     OrderNode *next;
     OrderNode *prev;
 
+    void CancelOrder();
+
     OrderNode(int order_id, int volume, double price, time_t timestamp,
               OrderNode *prev = nullptr, OrderNode *next = nullptr);
 };
