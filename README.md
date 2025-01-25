@@ -1,15 +1,10 @@
 # Little Exchange 
-Want to build:
-1. Matching engine
-2. Basic networking
-3. Simple bots (market maker, etc.)
-4. Advanced networking (udp multicast, etc.)
-
+Following [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html)
 
 ## Project Structure 
 
 ```sh
-ether-bit-bot/
+litte-exchange/
 ├── include/                    # Public header files 
 ├── src/
 │   ├── main.cpp                # Entry point 
