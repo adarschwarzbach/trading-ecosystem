@@ -28,6 +28,7 @@ funcs:
 - GetTopOfBook() -> {top_of_book}
 
 **PriceLevelQueue**
+- [] completion status
 vars:
 - price 
 - volume
