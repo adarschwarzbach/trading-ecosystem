@@ -41,3 +41,12 @@ bazel test //tests:test_order_node
 ```bash
 bazel test //tests:test_order_node --test_filter=OrderNodeTest.Initialization
 ```
+
+## Notes
+
+- [glob](https://bazel.build/reference/be/functions)
+    - glob = global pattern matching,  It allows Bazel to match files or directories using wildcard patterns like *, **, and ?.
+        - *: Matches any sequence of characters except /. 
+        - **: Matches recursively in all subdirectories.
+        - ?: Matches any single character.
+

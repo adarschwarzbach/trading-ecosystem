@@ -5,17 +5,21 @@
 class PriceLevelQueue
 {
 private:
-    int price;
+    double price;
     OrderNode front;
     OrderNode back;
     bool has_orders;
 
 public:
-    PriceLevelQueue(int price);
-    int GetPrice() const;
-    void AddOrder(OrderNode *order);
+    PriceLevelQueue(double price);
+    double GetPrice() const;
+    void AddOrder(OrderNode &order);
     bool HasOrders() const;
-    void UpdateHasOrders(bool state);
+    void RemoveOrder(OrderNode &order);
+    // Additional methods for testing
+    const OrderNode *GetFrontNext() const;
+    const OrderNode *GetBackPrev() const;
+    const OrderNode *GetFront() const;
 };
 
 #endif
