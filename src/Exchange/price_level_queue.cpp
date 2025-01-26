@@ -1,5 +1,4 @@
-#include "../include/Exchange/price_level_queue.hpp" // update to be cleaner path with cmake/makefile
-#include "price_level_queue.hpp"
+#include "Exchange/price_level_queue.hpp"
 #include <ctime>
 
 PriceLevelQueue::PriceLevelQueue(int price)

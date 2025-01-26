@@ -1,16 +1,15 @@
 #ifndef LIMIT_ORDER_BOOK
 #define LIMIT_ORDER_BOOK
 // project headers
-#include "./order_node.hpp"
-#include "./trade.hpp"
-#include "../Utils/order_type.hpp"
-#include "./price_level_queue.hpp"
-#include "./top_of_book.hpp"
+#include "Exchange/order_node.hpp"
+#include "Exchange/trade.hpp"
+#include "Utils/order_type.hpp"
+#include "Exchange/price_level_queue.hpp"
+#include "Exchange/top_of_book.hpp"
 
 // std headers
 #include <string>
 #include <variant>
-#include <vector>
 #include <ctime>
 #include <unordered_map>
 #include <queue>
@@ -20,7 +19,7 @@
 class AskComparator
 {
 public:
-    bool operator()(PriceLevelQueue a, PriceLevelQueue b)
+    inline bool operator()(const PriceLevelQueue &a, const PriceLevelQueue &b) // inline
     {
         return a.GetPrice() > b.GetPrice();
     }
@@ -29,7 +28,7 @@ public:
 class BidComparator
 {
 public:
-    bool operator()(PriceLevelQueue a, PriceLevelQueue b)
+    inline bool operator()(const PriceLevelQueue &a, const PriceLevelQueue &b) // inline
     {
         return a.GetPrice() < b.GetPrice();
     }

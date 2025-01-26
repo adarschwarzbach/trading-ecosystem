@@ -1,0 +1,1 @@
+workspace(name = "trading-ecosystem")

@@ -1,4 +1,4 @@
-#include "../include/Exchange/top_of_book.hpp" // update to be cleaner path with cmake/makefile
+#include "Exchange/top_of_book.hpp"
 
 TopOfBook::TopOfBook(
     int ask_price,

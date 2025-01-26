@@ -1,4 +1,4 @@
-#include "../include/Exchange/order_node.hpp" // update to be cleaner path with cmake/makefile
+#include "Exchange/order_node.hpp" // update to be cleaner path with cmake/makefile
 #include <iostream>
 #include <ctime>
 #include <string>

@@ -1,4 +1,4 @@
-#include "../include/Exchange/trade.hpp" // update to be cleaner path with cmake/makefile
+#include "Exchange/trade.hpp"
 #include <string>
 #include <ctime>
 

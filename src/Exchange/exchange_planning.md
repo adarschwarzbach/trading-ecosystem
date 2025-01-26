@@ -58,4 +58,4 @@ funcs:
 **ToDo**
 - [ ] Probably should build my own pq for arbitrary O(log(n)) removal
 - [ ] Explore multithreading to update different LOB's in parallel
-- [ ] Explore inlining and optimizations to improve speed at runtime for Exchange -> LOB
+- [ ] Explore inlining, compiler flags & optimizations to improve speed at runtime for Exchange -> LOB
