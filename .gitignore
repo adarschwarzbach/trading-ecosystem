@@ -1,0 +1,14 @@
+# Bazel build artifacts
+bazel-*
+bazel-bin
+bazel-out
+bazel-testlogs
+*.runfiles/
+external/
+
+# Temporary Bazel files
+*.lock
+.bazelrc.user
+
+# VS Code settings - local configurations
+.vscode/

@@ -11,8 +11,8 @@ struct OrderNode
     const double price;
     const time_t timestamp;
     const std::string ticker;
-    OrderNode *next;
     OrderNode *prev;
+    OrderNode *next;
 
     OrderNode(int order_id, const std::string user_id, int volume, double price, time_t timestamp, const std::string ticker,
               OrderNode *prev = nullptr, OrderNode *next = nullptr);
