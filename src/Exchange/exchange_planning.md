@@ -7,8 +7,11 @@ Want to build:
 
 
 **Exchange**
+- [ ] status
 vars:
-- <ticker: string, LimitOrderBook>
+- lobs: <ticker: string, LimitOrderBook>
+- trades: <ticker: [trade]>
+
 
 funcs:
 - GetVolume(ticker, price, order_type) -> int volume
@@ -16,19 +19,23 @@ funcs:
 - GetTopOfBook(ticker) -> {top_of_book}
 
 **LimitOrderBook**
+- [ ] status
 vars: 
 - ask: heap <PriceLevelQueue> 
     - comparator, min price
 - bid: heap <PriceLevelQueue>
+- ticker
 
 funcs:
 - GetVolume(price, order_type)
 - AddOrder(order_type, symbol, price, vol) -> (order_id || {trade})
 - CancelOrder(order_id)
+    - Needs to slice node out of PLQ, delete node & check if PLQ still has members 
 - GetTopOfBook() -> {top_of_book}
 
 **PriceLevelQueue**
-- [ ] completion status
+- [ ] status
+<br/>
 vars:
 - price 
 - volume
@@ -39,14 +46,16 @@ funcs:
 - AddOrder()
 
 
-
 **OrderNode**
+- [x] status
 
-funs:
-- CancelOrder() 
+
+**Trade**
+- [x] status
+
 
 
 **ToDo**
-- Probably should build my own pq for arbitrary O(log(n)) removal
-- Explore multithreading to update different LOB's in parallel
-- Explore inlining and optimizations to improve speed at runtime for Exchange -> LOB
+- [ ] Probably should build my own pq for arbitrary O(log(n)) removal
+- [ ] Explore multithreading to update different LOB's in parallel
+- [ ] Explore inlining and optimizations to improve speed at runtime for Exchange -> LOB

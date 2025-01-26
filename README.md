@@ -7,12 +7,10 @@ Following [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.
 litte-exchange/
 ├── include/                    # Public header files 
 ├── src/
-│   ├── main.cpp                # Entry point 
-│   ├── notes.md                # Markdown notes as I go
-│   ├── engine/                 # Matching engine
+│   ├── exchange/               # Exchange & LOB's
 ├── tests/
 ├── CMakeLists.txt              # CMake build configuration
-├── README.md                   # Documentation for the project
+├── README.md                   
 ```
 
 # Notes
