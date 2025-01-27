@@ -4,8 +4,8 @@
 
 PriceLevelQueue::PriceLevelQueue(double price)
     : price(price),
-      front(-1, "dummy_front", 0, 0.0, time(nullptr), "dummy", nullptr, nullptr), // Initialize dummy front
-      back(-1, "dummy_back", 0, 0.0, time(nullptr), "dummy", nullptr, nullptr),   // Initialize dummy back
+      front(-1, "dummy_front", 0, 0.0, OrderType::ASK, time(nullptr), "dummy", nullptr, nullptr), // Initialize dummy front
+      back(-1, "dummy_back", 0, 0.0, OrderType::ASK, time(nullptr), "dummy", nullptr, nullptr),   // Initialize dummy back
       has_orders(false)
 {
     front.next = &back;
@@ -72,4 +72,40 @@ const OrderNode *PriceLevelQueue::GetBackPrev() const
 const OrderNode *PriceLevelQueue::GetFront() const
 {
     return &front;
+}
+
+OrderNode &PriceLevelQueue::Peek()
+{
+    if (front.next == &back)
+    {
+        throw std::runtime_error("Queue is empty. No order to peak.");
+    }
+    return *front.next;
+}
+
+OrderNode &PriceLevelQueue::Pop()
+{
+    if (front.next == &back)
+    {
+        throw std::runtime_error("Queue is empty. Cannot pop.");
+    }
+
+    // Get the actual front node
+    OrderNode *node_to_remove = front.next;
+
+    // Update links to remove the node
+    front.next = node_to_remove->next;
+    node_to_remove->next->prev = &front;
+
+    // Clean up dangling references in the removed node
+    node_to_remove->next = nullptr;
+    node_to_remove->prev = nullptr;
+
+    // Check if the queue is now empty
+    if (front.next == &back)
+    {
+        has_orders = false;
+    }
+
+    return *node_to_remove;
 }

@@ -1,6 +1,7 @@
 #ifndef PRIORITY_LEVEL_QUEUE_H
 #define PRIORITY_LEVEL_QUEUE_H
 #include "exchange/order_node.hpp"
+#include "utils/order_type.hpp"
 
 class PriceLevelQueue
 {
@@ -20,6 +21,10 @@ public:
     const OrderNode *GetFrontNext() const;
     const OrderNode *GetBackPrev() const;
     const OrderNode *GetFront() const;
+    // Peak
+    OrderNode &Peek();
+    // Pop
+    OrderNode &Pop();
 };
 
 #endif

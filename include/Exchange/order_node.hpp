@@ -2,20 +2,29 @@
 #define ORDER_NODE_H
 #include <ctime>
 #include <string>
+#include "utils/order_type.hpp"
 
 struct OrderNode
 {
-    const int order_id;
-    const std::string user_id;
-    const int volume;
-    const double price;
-    const time_t timestamp;
-    const std::string ticker;
+    int order_id;
+    std::string user_id;
+    int volume;
+    double price;
+    OrderType order_type;
+    time_t timestamp;
+    std::string ticker;
     OrderNode *prev;
     OrderNode *next;
 
-    OrderNode(int order_id, const std::string user_id, int volume, double price, time_t timestamp, const std::string ticker,
-              OrderNode *prev = nullptr, OrderNode *next = nullptr);
+    OrderNode(int order_id,
+              std::string user_id,
+              int volume,
+              double price,
+              OrderType order_type,
+              time_t timestamp,
+              std::string ticker,
+              OrderNode *prev = nullptr,
+              OrderNode *next = nullptr);
 };
 
 #endif

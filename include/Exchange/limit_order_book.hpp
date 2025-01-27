@@ -6,6 +6,7 @@
 #include "utils/order_type.hpp"
 #include "exchange/price_level_queue.hpp"
 #include "exchange/top_of_book.hpp"
+#include "exchange/order_result.hpp"
 
 // std headers
 #include <string>
@@ -15,43 +16,52 @@
 #include <queue>
 #include <vector>
 
-// When true is returned, it means the order is NOT correct and swapping of elements takes place.
-class AskComparator
-{
-public:
-    inline bool operator()(const PriceLevelQueue &a, const PriceLevelQueue &b) // inline
-    {
-        return a.GetPrice() > b.GetPrice();
-    }
-};
-
-class BidComparator
-{
-public:
-    inline bool operator()(const PriceLevelQueue &a, const PriceLevelQueue &b) // inline
-    {
-        return a.GetPrice() < b.GetPrice();
-    }
-};
-
 class LimitOrderBook
 {
 private:
+    const std::string ticker;
     // volume
     std::unordered_map<int, int> ask_volume_at_price;
     std::unordered_map<int, int> bid_volume_at_price;
 
-    // PQ's of PLQ's
-    std::priority_queue<PriceLevelQueue, std::vector<PriceLevelQueue>, AskComparator> ask_order_pq;
-    std::priority_queue<PriceLevelQueue, std::vector<PriceLevelQueue>, BidComparator> bid_order_pq;
+    // price level
+    std::unordered_map<double, std::shared_ptr<PriceLevelQueue>> ask_order_queues;
+    std::unordered_map<double, std::shared_ptr<PriceLevelQueue>> bid_order_queues;
 
-    // orders
+    // PQ's of PLQ's
+    std::priority_queue<
+        std::shared_ptr<PriceLevelQueue>,
+        std::vector<std::shared_ptr<PriceLevelQueue>>,
+        std::function<bool(const std::shared_ptr<PriceLevelQueue> &, const std::shared_ptr<PriceLevelQueue> &)>>
+        ask_order_pq;
+
+    std::priority_queue<
+        std::shared_ptr<PriceLevelQueue>,
+        std::vector<std::shared_ptr<PriceLevelQueue>>,
+        std::function<bool(const std::shared_ptr<PriceLevelQueue> &, const std::shared_ptr<PriceLevelQueue> &)>>
+        bid_order_pq;
+
+    // Orders
     std::unordered_map<int, OrderNode> order_node_map;
 
+    // Previous filled trades
+    std::vector<Trade> filled_trades;
+
+    // Helper to add order to book
+    int AddOrderToBook(std::string user_id,
+                       OrderType order_type,
+                       int volume,
+                       double price,
+                       time_t timestamp,
+                       std::string ticker);
+
+    // std::variant<void, Trade> HandleOrderMatching();
+
 public:
-    const std::string ticker;
+    LimitOrderBook(std::string ticker);
+
     // Returns confirmation or vector of trades
-    std::variant<bool, std::vector<Trade>> HandleOrder(
+    OrderResult HandleOrder(
         std::string user_id,
         OrderType order_type,
         int volume,
@@ -59,9 +69,22 @@ public:
         time_t timestamp,
         std::string ticker);
 
+    const std::string &GetTicker() const;
     int GetVolume(int price, OrderType order_type);
     bool CancelOrder(int order_id);
     TopOfBook GetTopOfBook();
+    std::vector<Trade> GetPreviousTrades(int num_previous_trades);
 };
+
+template <typename Comparator>
+void CleanupPriorityQueue(std::priority_queue<std::shared_ptr<PriceLevelQueue>,
+                                              std::vector<std::shared_ptr<PriceLevelQueue>>,
+                                              Comparator> &pq)
+{
+    while (!pq.empty() && pq.top() && !pq.top()->HasOrders())
+    {
+        pq.pop();
+    }
+}
 
 #endif

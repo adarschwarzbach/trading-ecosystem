@@ -5,6 +5,7 @@ cc_library(
     srcs = ["order_node.cpp"],
     hdrs = ["//include/exchange:order_node.hpp"],
     copts = ["-Iinclude"],  # Allows for clean header file import
+    deps = ["//include/utils:order_type"],
 )
 
 cc_library(
@@ -12,6 +13,14 @@ cc_library(
     srcs = ["trade.cpp"],
     hdrs = ["//include/exchange:trade.hpp"],
     copts = ["-Iinclude"],
+)
+
+cc_library(
+    name = "order_result",
+    srcs = ["trade.cpp"],
+    hdrs = ["//include/exchange:trade.hpp"],
+    copts = ["-Iinclude"],
+    deps = [":trade"],
 )
 
 cc_library(
@@ -34,10 +43,13 @@ cc_library(
     srcs = ["limit_order_book.cpp"],
     hdrs = ["//include/exchange:limit_order_book.hpp"],
     copts = ["-Iinclude"],
+    includes = ["include"],
     deps = [
         ":order_node",
+        ":order_result",
         ":price_level_queue",
         ":top_of_book",
         ":trade",
+        "//include/utils:order_type",
     ],
 )
