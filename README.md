@@ -29,6 +29,7 @@ trading-ecosystem/
 ```
 
 
+
 ## Internal Resources
 
 [Project specific Bazel commands & notes](/BAZEL_COMMANDS.md)
