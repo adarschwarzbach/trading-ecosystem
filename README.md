@@ -1,21 +1,24 @@
-# Little Exchange 
-Following [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html)
-Using [GTest](https://google.github.io/googletest/)
+# trading-ecosystem
+- Following [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html)
+- Using [GTest](https://google.github.io/googletest/) for testing
+- [Bazel](https://bazel.build/start/cpp) for build
+- [Benchmark](https://github.com/google/benchmark) for performance testing
+- [Beej's](https://beej.us/guide/bgnet/pdf/bgnet_usl_c_1.pdf) for networking tipcs
 
 ## Project Structure 
 
 ```sh
-litte-exchange/
+trading-ecosystem/
 ├── include/                        # Public header files 
-│   ├── Exchange/
-│   ├── Utils/               
+│   ├── exchange/
+│   ├── utils/               
 │   └── ...
 ├── src/
-│   ├── Exchange/                   # Exchange & LOB's
+│   ├── exchange/                   # Exchange & LOB's
 │   │   ├── BUILD                   # Build targets
 │   │   ├── limit_order_book.cpp    # LOB implementation
 │   │   └── ...
-│   ├── Utils/                      # Helpers
+│   ├── utils/                      # Helpers
 │   └── ...
 ├── tests/                          # Tests   
 ├── .gitignore  
@@ -25,13 +28,7 @@ litte-exchange/
 ├── README.md  
 ```
 
-## Getting started
-***ToDo***
 
-## 
+## Internal Resources
+
 [Project specific Bazel commands & notes](/BAZEL_COMMANDS.md)
-
-## Online Resources 
-- [C++ Project Structure](https://medium.com/heuristics/c-application-development-part-1-project-structure-454b00f9eddc)
-- [Bazel](https://bazel.build/start/cpp)
-    - [Bazel Intro](https://medium.com/@d.s.m/understanding-bazel-an-introductory-overview-0c9ddb1b1ce9)
