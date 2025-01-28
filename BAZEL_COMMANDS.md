@@ -20,6 +20,11 @@ bazel build //tests:all
 bazel test //tests:all
 ```
 
+**Run All Tests & stream cout in terminal**
+```bash
+bazel test //tests:all --test_output=streamed
+```
+
 **Run All Tests with Verbose Output**
 ```bash
 bazel test //tests:all --test_output=all

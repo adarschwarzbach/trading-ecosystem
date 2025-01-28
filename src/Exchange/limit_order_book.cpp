@@ -16,6 +16,7 @@
 #include <vector>
 #include <stdexcept>
 #include <random>
+#include <iostream> //For debugging
 
 /**
  * Constructs a new LimitOrderBook for a given ticker symbol.
@@ -56,74 +57,67 @@ OrderResult LimitOrderBook::HandleOrder(
     time_t timestamp,
     std::string ticker)
 {
-    // Remove empty price levels
-    // ToDo: write my own PQ to arbitrarily remove empty PLQ's
+    if (ticker != GetTicker())
+    {
+        throw std::runtime_error("Order is not for the security that this book represents.");
+    }
+    if (price <= 0)
+    {
+        throw std::runtime_error("Price must be greater than zero");
+    }
+    if (volume <= 0)
+    {
+        throw std::runtime_error("Volume must be greater than zero");
+    }
+
+    // Cleanup empty price levels
     CleanupPriorityQueue(ask_order_pq);
     CleanupPriorityQueue(bid_order_pq);
 
-    const OrderType opposite_side = (order_type == OrderType::ASK)
-                                        ? OrderType::BID
-                                        : OrderType::ASK;
-
+    const OrderType opposite_side = (order_type == OrderType::ASK) ? OrderType::BID : OrderType::ASK;
     auto &opposite_pq = (opposite_side == OrderType::ASK) ? ask_order_pq : bid_order_pq;
+    auto &opposite_volume_map = (opposite_side == OrderType::BID) ? bid_volume_at_price : ask_volume_at_price;
 
-    std::unordered_map<int, int> &opposite_side_volume = (opposite_side == OrderType::BID)
-                                                             ? bid_volume_at_price
-                                                             : ask_volume_at_price;
+    std::vector<Trade> trades;
 
-    std::vector<Trade> trades; // Vector of trades exectued from order
-
-    while (!opposite_pq.empty()) // If there are prices on the other side of the book
+    // Process matching orders
+    while (!opposite_pq.empty() && volume > 0)
     {
-        // Get the best PLQ for the opposite side
-        if (opposite_pq.empty() || !opposite_pq.top())
+        auto best_opposite_queue = opposite_pq.top();
+        if (!best_opposite_queue || !best_opposite_queue->HasOrders())
         {
-            throw std::runtime_error("Priority queue is empty or contains a null PriceLevelQueue");
+            opposite_pq.pop();
+            continue; // Skip invalid queues
         }
-        const int best_opposite_price = opposite_pq.top()->GetPrice();
-        PriceLevelQueue &opposite_best_price_queue = *((opposite_side == OrderType::ASK)
-                                                           ? ask_order_queues[best_opposite_price]
-                                                           : bid_order_queues[best_opposite_price]);
 
-        while (
-            opposite_best_price_queue.HasOrders() &&                                 // ensure price level is still valid
-            volume > 0 &&                                                            // ensure that agressive order has not been fully satisfied
-            PricesMatch(price, opposite_best_price_queue.GetPrice(), opposite_side)) // Ensure prices match
+        PriceLevelQueue &opposite_best_price_queue = *best_opposite_queue;
+        double best_opposite_price = opposite_best_price_queue.GetPrice();
+
+        if (!PricesMatch(price, best_opposite_price, opposite_side))
         {
-
-            OrderNode &current_opposite_order = opposite_best_price_queue.Peek();
-            int vol_filled = 0;
-
-            if (current_opposite_order.volume > volume) // Simply edit opposite order
-            {
-                // Edit order
-                current_opposite_order.volume = current_opposite_order.volume - volume;
-                vol_filled = volume; //  Entirely filled the agressive volume
-            }
-            else // remove opposite order and fill entirely
-            {
-                OrderNode &popped_opposite_order = opposite_best_price_queue.Pop(); // Remove order - TODO free node memory
-                volume -= popped_opposite_order.volume;                             // Decrease agressive order vol
-                // Remove order
-                order_node_map.erase(popped_opposite_order.order_id); // eventually gotta clean up memeory
-
-                vol_filled = popped_opposite_order.volume; // Entirely filled opposite order volume
-            }
-
-            // Log trade
-            Trade new_trade = GenerateTrade(
-                opposite_side,
-                user_id,
-                current_opposite_order.user_id,
-                price,
-                vol_filled);
-
-            trades.push_back(new_trade);
-            filled_trades.push_back(new_trade);
-
-            // Update volume
-            opposite_side_volume[price] -= vol_filled;
+            break; // Stop if prices no longer match
         }
+
+        OrderNode &current_opposite_order = opposite_best_price_queue.Peek();
+        int vol_filled = std::min(volume, current_opposite_order.volume);
+
+        // Adjust volumes
+        current_opposite_order.volume -= vol_filled;
+        volume -= vol_filled;
+
+        // Log trade
+        Trade trade = GenerateTrade(opposite_side, user_id, current_opposite_order.user_id, best_opposite_price, vol_filled);
+        trades.push_back(trade);
+        filled_trades.push_back(trade);
+
+        // Remove fully matched orders
+        if (current_opposite_order.volume == 0)
+        {
+            opposite_best_price_queue.Pop();
+            order_node_map.erase(current_opposite_order.order_id);
+        }
+
+        opposite_volume_map[best_opposite_price] -= vol_filled;
 
         if (!opposite_best_price_queue.HasOrders())
         {
@@ -132,23 +126,15 @@ OrderResult LimitOrderBook::HandleOrder(
     }
 
     int new_order_id = -1;
-
-    if (volume > 0) // Add order to book if volume remains
+    if (volume > 0)
     {
+        // Add remaining order to the book
         new_order_id = AddOrderToBook(user_id, order_type, volume, price, timestamp, ticker);
-
-        std::unordered_map<int, int> &same_side_volume = (order_type == OrderType::BID)
-                                                             ? bid_volume_at_price
-                                                             : ask_volume_at_price;
-
+        auto &same_side_volume = (order_type == OrderType::BID) ? bid_volume_at_price : ask_volume_at_price;
         same_side_volume[price] += volume;
     }
 
-    return OrderResult(
-        trades.size() > 0,
-        trades,
-        new_order_id > 0,
-        new_order_id);
+    return OrderResult(!trades.empty(), trades, new_order_id > 0, new_order_id);
 }
 
 /**
@@ -244,8 +230,9 @@ int LimitOrderBook::AddOrderToBook(std::string user_id,
 {
     int order_id = GenerateId();
 
-    // Create a new order node
-    OrderNode new_order(
+    // Create a local OrderNode, but only use it to initialize the map.
+    // The map will contain the *official* (long-lived) copy.
+    OrderNode tmp_order(
         order_id,
         user_id,
         volume,
@@ -256,32 +243,28 @@ int LimitOrderBook::AddOrderToBook(std::string user_id,
         nullptr,
         nullptr);
 
-    // Add the order node to the map
-    order_node_map.emplace(order_id, new_order);
+    // Emplace it into the map (by value), then get a reference to
+    // the newly stored node inside the map
+    auto [map_it, inserted] = order_node_map.emplace(order_id, tmp_order);
+    OrderNode &stored_node = map_it->second;
 
-    // Select the appropriate side's price level queues
-    auto &given_side_price_level_queues = (order_type == OrderType::ASK)
-                                              ? ask_order_queues
-                                              : bid_order_queues;
+    // NOW pass that reference to PriceLevelQueue
+    auto &side_price_level_queues =
+        (order_type == OrderType::ASK) ? ask_order_queues : bid_order_queues;
+    auto &side_pq =
+        (order_type == OrderType::ASK) ? ask_order_pq : bid_order_pq;
 
-    auto &given_side_pq = (order_type == OrderType::ASK)
-                              ? ask_order_pq
-                              : bid_order_pq;
-
-    // Check if a `PriceLevelQueue` already exists for this price
-    auto it = given_side_price_level_queues.find(price);
-    if (it == given_side_price_level_queues.end()) // No PLQ exists for this price
+    // If no PriceLevelQueue exists, create a new one
+    auto it = side_price_level_queues.find(price);
+    if (it == side_price_level_queues.end())
     {
-        // Create a new `PriceLevelQueue` and store it as a shared pointer
         auto new_price_level_queue = std::make_shared<PriceLevelQueue>(price);
-
-        // Add it to both the map and the priority queue
-        given_side_price_level_queues[price] = new_price_level_queue;
-        given_side_pq.push(new_price_level_queue);
+        side_price_level_queues[price] = new_price_level_queue;
+        side_pq.push(new_price_level_queue);
     }
 
-    // Add the new order to the appropriate `PriceLevelQueue`
-    given_side_price_level_queues[price]->AddOrder(new_order);
+    // Add the *map's* node, not the temporary
+    side_price_level_queues[price]->AddOrder(stored_node);
 
     return order_id;
 }
@@ -299,7 +282,7 @@ const std::string &LimitOrderBook::GetTicker() const
  * @return The total volume available at the specified price level.
  */
 
-int LimitOrderBook::GetVolume(int price, OrderType order_type)
+int LimitOrderBook::GetVolume(double price, OrderType order_type)
 {
     const auto &volume_map = (order_type == OrderType::ASK) ? ask_volume_at_price : bid_volume_at_price;
     auto it = volume_map.find(price);
@@ -346,6 +329,12 @@ bool LimitOrderBook::CancelOrder(int order_id)
 
     PriceLevelQueue &price_level = *(queue_it->second);
 
+    // Decrease volume
+    std::unordered_map<int, int> &same_side_volume = (order_to_cancel.order_type == OrderType::BID)
+                                                         ? bid_volume_at_price
+                                                         : ask_volume_at_price;
+    same_side_volume[order_to_cancel.price] -= order_to_cancel.volume;
+
     // Remove the order from the price level queue
     price_level.RemoveOrder(order_to_cancel);
 
@@ -363,25 +352,81 @@ bool LimitOrderBook::CancelOrder(int order_id)
 
 TopOfBook LimitOrderBook::GetTopOfBook()
 {
-    if (ask_order_pq.empty() || !ask_order_pq.top() ||
-        bid_order_pq.empty() || !bid_order_pq.top() ||
-        !ask_order_pq.top()->HasOrders() || !bid_order_pq.top()->HasOrders())
+
+    double best_ask_price = 0.0;
+    int best_ask_volume = 0;
+    bool has_ask = false;
+
+    while (!ask_order_pq.empty())
+    {
+        auto ask_top = ask_order_pq.top();
+        // If top pointer is invalid or empty, pop and continue
+        if (!ask_top || !ask_top->HasOrders())
+        {
+            ask_order_pq.pop();
+            continue;
+        }
+        double price = ask_top->GetPrice();
+        int vol = ask_volume_at_price[price];
+        if (vol > 0)
+        {
+            best_ask_price = price;
+            best_ask_volume = vol;
+            has_ask = true;
+        }
+        // If volume is zero, also pop. Otherwise we found our best ask
+        if (vol == 0)
+        {
+            ask_order_pq.pop();
+            continue;
+        }
+        break;
+    }
+
+    double best_bid_price = 0.0;
+    int best_bid_volume = 0;
+    bool has_bid = false;
+
+    while (!bid_order_pq.empty())
+    {
+        auto bid_top = bid_order_pq.top();
+        if (!bid_top || !bid_top->HasOrders())
+        {
+            bid_order_pq.pop();
+            continue;
+        }
+        double price = bid_top->GetPrice();
+        int vol = bid_volume_at_price[price];
+        if (vol > 0)
+        {
+            best_bid_price = price;
+            best_bid_volume = vol;
+            has_bid = true;
+        }
+        if (vol == 0)
+        {
+            bid_order_pq.pop();
+            continue;
+        }
+        break;
+    }
+
+    // If neither ask nor bid exists, no top
+    if (!has_ask && !has_bid)
     {
         return TopOfBook(false, 0.0, 0, 0.0, 0);
     }
 
-    int best_ask_price = ask_order_pq.top()->GetPrice();
-    int best_bid_price = bid_order_pq.top()->GetPrice();
-
+    // Otherwise, we have at least one side
+    //    If no ask, we keep ask_price=0, ask_volume=0
+    //    If no bid, we keep bid_price=0, bid_volume=0
     return TopOfBook(
         true,
         best_ask_price,
-        ask_volume_at_price[best_ask_price],
+        best_ask_volume,
         best_bid_price,
-        bid_volume_at_price[best_bid_price]);
+        best_bid_volume);
 }
-
-#include "exchange/limit_order_book.hpp"
 
 std::vector<Trade> LimitOrderBook::GetPreviousTrades(int num_previous_trades)
 {

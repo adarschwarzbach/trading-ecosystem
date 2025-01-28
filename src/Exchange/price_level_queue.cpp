@@ -1,6 +1,7 @@
 #include "exchange/price_level_queue.hpp"
 #include <ctime>
 #include <stdexcept>
+#include <iostream> // For logging
 
 PriceLevelQueue::PriceLevelQueue(double price)
     : price(price),
@@ -43,17 +44,26 @@ bool PriceLevelQueue::HasOrders() const
 
 void PriceLevelQueue::RemoveOrder(OrderNode &order)
 {
+    std::cout << "Inside PLQ, trying to cancel: " << order.order_id << std::endl;
+
     OrderNode *earlier_node_ptr = order.prev;
     OrderNode *ltr_node_ptr = order.next;
-    earlier_node_ptr->next = ltr_node_ptr;
-    ltr_node_ptr->prev = earlier_node_ptr;
+
+    if (earlier_node_ptr)
+    {
+        earlier_node_ptr->next = ltr_node_ptr;
+    }
+    if (ltr_node_ptr)
+    {
+        ltr_node_ptr->prev = earlier_node_ptr;
+    }
 
     // Clean up dangling references
     order.prev = nullptr;
     order.next = nullptr;
 
     // Check if PLQ is empty
-    if (earlier_node_ptr == &front && ltr_node_ptr == &back)
+    if (front.next == &back)
     {
         has_orders = false;
     }

@@ -81,7 +81,7 @@ public:
         std::string ticker);
 
     const std::string &GetTicker() const;
-    int GetVolume(int price, OrderType order_type);
+    int GetVolume(double price, OrderType order_type);
     bool CancelOrder(int order_id);
     TopOfBook GetTopOfBook();
     std::vector<Trade> GetPreviousTrades(int num_previous_trades);
