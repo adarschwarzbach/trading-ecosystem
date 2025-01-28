@@ -161,7 +161,7 @@ OrderResult LimitOrderBook::HandleOrder(
  *
  * Inline
  */
-inline bool PricesMatch(double aggressive_price, double opposite_side_price, OrderType opposite_side)
+inline bool LimitOrderBook::PricesMatch(double aggressive_price, double opposite_side_price, OrderType opposite_side)
 {
     const double epsilon = 1e-6; // Tolerance for floating-point comparison
 
@@ -186,7 +186,7 @@ inline bool PricesMatch(double aggressive_price, double opposite_side_price, Ord
  * @return A Trade object containing details of the executed trade.
  */
 
-Trade GenerateTrade(OrderType opposite_side, std::string user_id, std::string opposite_user_id, double price, int volume)
+Trade LimitOrderBook::GenerateTrade(OrderType opposite_side, std::string user_id, std::string opposite_user_id, double price, int volume)
 {
     time_t now = time(0);
     std::string bid_user_id;
@@ -216,7 +216,7 @@ Trade GenerateTrade(OrderType opposite_side, std::string user_id, std::string op
  * @return A unique integer ID.
  */
 
-int GenerateId()
+int LimitOrderBook::GenerateId()
 {
     static std::atomic<int> id_counter(0);
     return ++id_counter;
@@ -245,17 +245,19 @@ int LimitOrderBook::AddOrderToBook(std::string user_id,
     int order_id = GenerateId();
 
     // Create a new order node
-    OrderNode newOrder(
+    OrderNode new_order(
         order_id,
         user_id,
         volume,
         price,
         order_type,
         timestamp,
-        ticker);
+        ticker,
+        nullptr,
+        nullptr);
 
     // Add the order node to the map
-    order_node_map[order_id] = newOrder;
+    order_node_map.emplace(order_id, new_order);
 
     // Select the appropriate side's price level queues
     auto &given_side_price_level_queues = (order_type == OrderType::ASK)
@@ -279,7 +281,7 @@ int LimitOrderBook::AddOrderToBook(std::string user_id,
     }
 
     // Add the new order to the appropriate `PriceLevelQueue`
-    given_side_price_level_queues[price]->AddOrder(newOrder);
+    given_side_price_level_queues[price]->AddOrder(new_order);
 
     return order_id;
 }
@@ -377,4 +379,18 @@ TopOfBook LimitOrderBook::GetTopOfBook()
         ask_volume_at_price[best_ask_price],
         best_bid_price,
         bid_volume_at_price[best_bid_price]);
+}
+
+#include "exchange/limit_order_book.hpp"
+
+std::vector<Trade> LimitOrderBook::GetPreviousTrades(int num_previous_trades)
+{
+    if (num_previous_trades <= 0)
+    {
+        return {};
+    }
+
+    // Return up to `num_previous_trades` trades, starting from the most recent
+    int start_idx = std::max(0, static_cast<int>(filled_trades.size()) - num_previous_trades);
+    return std::vector<Trade>(filled_trades.begin() + start_idx, filled_trades.end());
 }

@@ -57,8 +57,19 @@ private:
 
     // std::variant<void, Trade> HandleOrderMatching();
 
+    inline bool PricesMatch(double aggressive_price,
+                            double opposite_side_price,
+                            OrderType opposite_side);
+
+    Trade GenerateTrade(OrderType opposite_side,
+                        std::string user_id,
+                        std::string opposite_user_id,
+                        double price,
+                        int volume);
+
 public:
     LimitOrderBook(std::string ticker);
+    int GenerateId();
 
     // Returns confirmation or vector of trades
     OrderResult HandleOrder(

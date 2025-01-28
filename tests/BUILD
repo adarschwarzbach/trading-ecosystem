@@ -29,6 +29,7 @@ cc_test(
         "//include/utils:order_type",
         "//src/exchange:limit_order_book",
         "//src/exchange:order_node",
+        "//src/exchange:order_result",
         "//src/exchange:price_level_queue",
         "//src/exchange:top_of_book",
         "//src/exchange:trade",

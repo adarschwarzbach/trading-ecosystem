@@ -17,8 +17,8 @@ cc_library(
 
 cc_library(
     name = "order_result",
-    srcs = ["trade.cpp"],
-    hdrs = ["//include/exchange:trade.hpp"],
+    srcs = ["order_result.cpp"],
+    hdrs = ["//include/exchange:order_result.hpp"],
     copts = ["-Iinclude"],
     deps = [":trade"],
 )
@@ -43,7 +43,6 @@ cc_library(
     srcs = ["limit_order_book.cpp"],
     hdrs = ["//include/exchange:limit_order_book.hpp"],
     copts = ["-Iinclude"],
-    includes = ["include"],
     deps = [
         ":order_node",
         ":order_result",
