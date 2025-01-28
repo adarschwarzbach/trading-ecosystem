@@ -52,3 +52,17 @@ cc_library(
         "//include/utils:order_type",
     ],
 )
+
+cc_library(
+    name = "exchange",
+    srcs = ["exchange.cpp"],
+    hdrs = ["//include/exchange:exchange.hpp"],
+    copts = ["-Iinclude"],
+    deps = [
+        ":limit_order_book",
+        ":order_result",
+        ":top_of_book",
+        ":trade",
+        "//include/utils:order_type",
+    ],
+)

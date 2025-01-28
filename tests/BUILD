@@ -37,3 +37,21 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "test_exchange",
+    srcs = ["exchange/test_exchange.cpp"],
+    copts = ["-Iinclude"],
+    deps = [
+        "//include/utils:order_type",
+        "//src/exchange",
+        "//src/exchange:limit_order_book",
+        "//src/exchange:order_node",
+        "//src/exchange:order_result",
+        "//src/exchange:price_level_queue",
+        "//src/exchange:top_of_book",
+        "//src/exchange:trade",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
