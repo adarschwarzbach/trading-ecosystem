@@ -1,6 +1,6 @@
 # trading-ecosystem
 - Following [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html)
-- Using [GTest](https://google.github.io/googletest/) for testing
+- [GTest](https://google.github.io/googletest/) for testing
 - [Bazel](https://bazel.build/start/cpp) for build
 - [Benchmark](https://github.com/google/benchmark) for performance testing
 - [Beej's](https://beej.us/guide/bgnet/pdf/bgnet_usl_c_1.pdf) for networking tips

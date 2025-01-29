@@ -55,3 +55,15 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "test_portfolio",
+    srcs = ["portfolio/test_portfolio.cpp"],
+    copts = ["-Iinclude"],
+    deps = [
+        "//src/portfolio",
+        "//src/portfolio:ticker_positions",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

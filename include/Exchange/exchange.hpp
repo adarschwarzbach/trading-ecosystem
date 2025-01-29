@@ -20,6 +20,7 @@ private:
     std::unordered_map<std::string, LimitOrderBook> limit_order_books;
     std::unordered_set<std::string> tickers;
     std::unordered_map<std::string, std::vector<Trade>> trades_by_user;
+    std::unordered_set<std::string> users;
     inline void ThrowIfTickerNotFound(std::string ticker);
 
 public:
@@ -36,6 +37,7 @@ public:
         double price,
         std::string ticker);
     std::vector<Trade> GetTradesByUser(std::string user_id);
+    bool RegisterUser(std::string user_id);
 };
 
 #endif

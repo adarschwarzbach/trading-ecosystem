@@ -102,3 +102,14 @@ std::vector<Trade> Exchange::GetTradesByUser(std::string user_id)
     }
     return {};
 }
+
+bool Exchange::RegisterUser(std::string user_id)
+{
+    auto it = users.find(user_id);
+    if (it != users.end())
+    {
+        return false; // Username/id already registered
+    }
+    users.emplace(user_id); // register user
+    return true;
+}

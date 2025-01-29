@@ -5,6 +5,14 @@ Want to build:
 3. Simple bots (market maker, etc.)
 4. Advanced networking (udp multicast, etc.)
 
+**portfolio**
+vars: 
+- Realized PNL 
+- Trades
+- LongPositions: {}
+- ShortPositions
+- LongOrders
+- ShortOrders
 
 **Exchange**
 - [ ] status
