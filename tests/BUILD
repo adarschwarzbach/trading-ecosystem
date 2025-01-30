@@ -67,3 +67,16 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+# CAN NOT RUN UNTIL ALL METHODS OF EXCHANGE ARE MARKED AS VIRTUAL
+# cc_test(
+#     name = "test_server",
+#     srcs = ["server/test_server.cpp"],
+#     copts = ["-Iinclude"],
+#     deps = [
+#         "//src/exchange",
+#         "//src/server",
+#         "@googletest//:gtest",
+#         "@googletest//:gtest_main",
+#     ],
+# )

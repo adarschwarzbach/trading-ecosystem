@@ -69,15 +69,12 @@ OrderResult Exchange::HandleOrder(
     // Make sure ticker is valid
     ThrowIfTickerNotFound(ticker);
 
-    // If you want the order to use the passed-in timestamp, do so directly.
-    // Or you can override with 'time(0)' if that is your desired design.
-    // For demonstration, let's just use 'timestamp' as provided:
     OrderResult new_order = limit_order_books.at(ticker).HandleOrder(
         user_id,
         order_type,
         volume,
         price,
-        time(0),
+        time(0), // Current epoch time
         ticker);
 
     // If trades occurred, record them under this user

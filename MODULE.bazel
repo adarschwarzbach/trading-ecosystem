@@ -4,6 +4,5 @@ module(
 )
 
 bazel_dep(name = "rules_cc", version = "0.1.0")
-
-# Add gtest using Bazel Central Registry
 bazel_dep(name = "googletest", version = "1.15.2")
+bazel_dep(name = "nlohmann_json", version = "3.11.2")

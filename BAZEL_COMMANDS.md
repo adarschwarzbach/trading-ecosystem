@@ -1,6 +1,20 @@
 # **Bazel Build and Test Commands**
 
+## Server
+
+**Build exchange server**
+```bash
+bazel build //src/server:server_main --verbose_failures
+```
+
+**Run server**
+```bash
+./bazel-bin/src/server/server_main --verbose       
+```
+
+
 ## **Build Commands**
+
 
 **Build a Single Target**
 To build a specific target (e.g., `order_node`):

@@ -1,9 +1,13 @@
-# EngineParts
-Want to build:
-1. Matching engine
-2. Basic networking
-3. Simple bots (market maker, etc.)
-4. Advanced networking (udp multicast, etc.)
+# To make a functional trading game...
+
+Gameplay
+- 
+
+Infra
+- The whole thing needs to be able to run as a server
+- Can't run out of memory
+- Has to be fast enough
+
 
 **portfolio**
 vars: 

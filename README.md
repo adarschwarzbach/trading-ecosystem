@@ -24,7 +24,7 @@ trading-ecosystem/
 │   │   └── ...
 │   ├── utils/                      # Helpers
 │   └── ...
-├── tests/                          # Tests   
+├── tests/                          # Tests (GTest)   
 ├── .gitignore  
 ├── BAZEL_COMMANDS.md               # Helpful Bazel commands
 ├── MODULE.bazel                    # Bazel root         

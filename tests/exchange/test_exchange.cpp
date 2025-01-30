@@ -409,3 +409,89 @@ TEST(ExchangeTest, CancelPartialOrder)
     // Volume at $300 should now be zero
     EXPECT_EQ(ex.GetVolume("NFLX", 300.0, OrderType::ASK), 0);
 }
+
+// -------------------------------------------------------------------
+// 1) Test User Registration
+// -------------------------------------------------------------------
+TEST(ExchangeTest, UserRegistration)
+{
+    Exchange ex({"AAPL"});
+
+    // Register a new user
+    EXPECT_TRUE(ex.RegisterUser("trader1"));
+    EXPECT_FALSE(ex.RegisterUser("trader1")); // Duplicate should fail
+}
+
+// -------------------------------------------------------------------
+// 2) Trade History Retrieval for Registered Users
+// -------------------------------------------------------------------
+TEST(ExchangeTest, UserTradeHistory)
+{
+    Exchange ex({"TSLA"});
+    ex.RegisterUser("userA");
+    ex.RegisterUser("userB");
+
+    // Place an order that results in a trade
+    ex.HandleOrder("userA", OrderType::ASK, 10, 300.0, "TSLA");
+    ex.HandleOrder("userB", OrderType::BID, 10, 305.0, "TSLA"); // Match
+
+    // Check trade history
+    auto tradesA = ex.GetTradesByUser("userA");
+    auto tradesB = ex.GetTradesByUser("userB");
+
+    EXPECT_EQ(tradesA.size(), 1u);
+    EXPECT_EQ(tradesB.size(), 1u);
+
+    EXPECT_EQ(tradesA[0].ask_user_id, "userA");
+    EXPECT_EQ(tradesA[0].bid_user_id, "userB");
+    EXPECT_EQ(tradesA[0].volume, 10);
+
+    EXPECT_EQ(tradesB[0].ask_user_id, "userA");
+    EXPECT_EQ(tradesB[0].bid_user_id, "userB");
+    EXPECT_EQ(tradesB[0].volume, 10);
+}
+
+// -------------------------------------------------------------------
+// 3) Empty Trade History for New Users
+// -------------------------------------------------------------------
+TEST(ExchangeTest, EmptyTradeHistory)
+{
+    Exchange ex({"GOOG"});
+    ex.RegisterUser("userC");
+
+    // No trades yet
+    auto trades = ex.GetTradesByUser("userC");
+    EXPECT_EQ(trades.size(), 0u);
+}
+
+// -------------------------------------------------------------------
+// 4) Trade History with Multiple Orders
+// -------------------------------------------------------------------
+TEST(ExchangeTest, MultipleTradesByUser)
+{
+    Exchange ex({"MSFT"});
+    ex.RegisterUser("userX");
+    ex.RegisterUser("userY");
+    ex.RegisterUser("userZ");
+
+    // Multiple trades for userX
+    ex.HandleOrder("userX", OrderType::ASK, 5, 250.0, "MSFT");
+    ex.HandleOrder("userY", OrderType::BID, 5, 255.0, "MSFT"); // Match
+
+    ex.HandleOrder("userX", OrderType::ASK, 3, 260.0, "MSFT");
+    ex.HandleOrder("userZ", OrderType::BID, 3, 265.0, "MSFT"); // Match
+
+    auto tradesX = ex.GetTradesByUser("userX");
+    EXPECT_EQ(tradesX.size(), 2u);
+}
+
+// // -------------------------------------------------------------------
+// // 5) Attempting to Place Order with Unregistered User
+// // -------------------------------------------------------------------
+// TEST(ExchangeTest, OrderFromUnregisteredUser)
+// {
+//     Exchange ex({"BTC"});
+
+//     // Unregistered user attempts to place an order
+//     EXPECT_THROW(ex.HandleOrder("ghostTrader", OrderType::BID, 10, 50000.0, "BTC"), std::runtime_error);
+// }
