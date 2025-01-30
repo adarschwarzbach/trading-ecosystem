@@ -117,6 +117,9 @@ void Server::handle_client(int client_socket)
             {
                 std::string ticker = request["ticker"];
                 TopOfBook top = exchange.GetTopOfBook(ticker);
+
+                std::cout << "bid_price " << top.bid_price << "\n";
+                std::cout << "ask_price " << top.ask_price << "\n";
                 response["bid_price"] = top.bid_price;
                 response["ask_price"] = top.ask_price;
                 response["bid_volume"] = top.bid_volume;
