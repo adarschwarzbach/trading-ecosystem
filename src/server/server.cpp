@@ -120,6 +120,7 @@ void Server::handle_client(int client_socket)
 
                 std::cout << "bid_price " << top.bid_price << "\n";
                 std::cout << "ask_price " << top.ask_price << "\n";
+                response["has_top"] = top.book_has_top;
                 response["bid_price"] = top.bid_price;
                 response["ask_price"] = top.ask_price;
                 response["bid_volume"] = top.bid_volume;
@@ -212,6 +213,9 @@ void Server::handle_client(int client_socket)
         catch (const std::exception &e)
         {
             std::cerr << "Error processing request: " << e.what() << std::endl;
+            response["error"] = "Unknown action";
+            std::string response_str = response.dump();
+            send(client_socket, response_str.c_str(), response_str.size(), 0);
         }
     }
 }
