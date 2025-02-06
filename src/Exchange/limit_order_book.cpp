@@ -99,6 +99,14 @@ OrderResult LimitOrderBook::HandleOrder(
         }
 
         OrderNode &current_opposite_order = opposite_best_price_queue.Peek();
+
+        // Handle wash trades by cancelling opposite order
+        if (current_opposite_order.user_id == user_id)
+        {
+            opposite_best_price_queue.RemoveOrder(current_opposite_order);
+            continue;
+        }
+
         int vol_filled = std::min(volume, current_opposite_order.volume);
 
         // Adjust volumes

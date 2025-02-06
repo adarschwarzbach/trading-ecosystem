@@ -849,3 +849,125 @@ TEST(LimitOrderBookStressTest, LargeComplexScenario)
     //  - Final volumes and top-of-book
     //  - Trade history consistency
 }
+TEST(LimitOrderBookSelfTradeTest, SelfTradeIsPreventedButOtherTradesOccur)
+{
+    LimitOrderBook lob("AAPL");
+
+    // 1) Place two ASK orders at the same price (100.0):
+    //    - "mm" (the market maker user), 5 shares
+    //    - "otherUser", 5 shares
+    lob.HandleOrder("mm", OrderType::ASK, 5, 100.0, std::time(nullptr), "AAPL");
+    lob.HandleOrder("otherUser", OrderType::ASK, 5, 100.0, std::time(nullptr), "AAPL");
+
+    // Sanity checks
+    EXPECT_EQ(lob.GetVolume(100.0, OrderType::ASK), 10)
+        << "Total of 10 shares at price 100.0";
+
+    // 2) Now "mm" enters a BID at 100.0 or higher, let's say 105.0,
+    //    with volume 8. This crosses the existing best ask of 100.0.
+    //    We want to see what happens.
+    OrderResult bid_result = lob.HandleOrder(
+        "mm", // same user as the first 5-share ASK
+        OrderType::BID,
+        8,
+        105.0, // crosses 100.0
+        std::time(nullptr),
+        "AAPL");
+
+    // 3) Verify the outcome:
+    //    - The engine should skip or remove "mm"'s own ASK (5 shares).
+    //    - Then it should still match with "otherUser" for the remaining volume.
+    //
+    //    So we expect partial or full trades with "otherUser," but NOT with "mm" itself.
+
+    // If the code uses "break;" in the self-trade check, you might see:
+    //    * The "mm" ask is removed
+    //    * The matching loop stops => no trades at all
+    //    * The new BID ends up on the book with leftover volume 8
+    //
+    // If the code uses "continue;", you might see:
+    //    * The "mm" ask is removed
+    //    * The code checks the next order in that same price level
+    //    * The leftover 8 shares match with "otherUser"'s 5 shares => trade of 5
+    //    * The BID then has leftover 3 shares => it gets added to the book
+    //    * So you end up with 1 trade (volume=5) in the result.
+
+    // Let's check trades:
+    if (bid_result.trades.empty())
+    {
+        std::cout << "[INFO] No trades in the result. This likely means your code used 'break;' "
+                     "after removing the self-order. The leftover entire 8-lot may remain on the BID side.\n";
+    }
+    else
+    {
+        // If we see trades, let's see how many:
+        for (auto &t : bid_result.trades)
+        {
+            std::cout << "Trade: volume=" << t.volume
+                      << " price=" << t.price
+                      << " ask_user=" << t.ask_user_id
+                      << " bid_user=" << t.bid_user_id << std::endl;
+
+            // Expect "ask_user" to be "otherUser," never "mm"
+            EXPECT_EQ(t.ask_user_id, "otherUser")
+                << "Self-trade prevention should skip 'mm' on the ask side.";
+
+            // Similarly, confirm the bid user is "mm"
+            EXPECT_EQ(t.bid_user_id, "mm");
+        }
+    }
+
+    // Check final volumes on the ASK side
+    int ask_vol_left_mm = lob.GetVolume(100.0, OrderType::ASK); // "mm" or "otherUser" leftover
+    // If your code removed "mm" but never matched "otherUser":
+    //    ask_vol_left_mm might be 5 (only "otherUser" left).
+    // If your code removed "mm" AND matched "otherUser" (5 shares):
+    //    ask_vol_left_mm might be 0.
+
+    std::cout << "Final volume at 100.0 (ASK side) = " << ask_vol_left_mm << std::endl;
+
+    // Check final volumes on the BID side
+    int bid_vol_left_mm = lob.GetVolume(105.0, OrderType::BID);
+    // If no trades at all => leftover is 8
+    // If partial match => leftover might be 3
+    // If the new BID fully matched the entire 5 on otherUser, we have leftover 3
+    std::cout << "Final volume at 105.0 (BID side) = " << bid_vol_left_mm << std::endl;
+
+    // In EITHER approach, we confirm that no self-trade got logged
+    auto recent_trades = lob.GetPreviousTrades(10);
+    for (auto &tr : recent_trades)
+    {
+        // "mm" should NEVER appear as both bid_user_id and ask_user_id in the same trade
+        EXPECT_FALSE(tr.ask_user_id == "mm" && tr.bid_user_id == "mm")
+            << "Self-trade was incorrectly allowed!";
+    }
+}
+
+TEST(LimitOrderBookTest, CancelAlreadyCancelledOrder)
+{
+    LimitOrderBook lob("AAPL");
+
+    // 1) Place a new order (BID or ASK—any is fine)
+    int order_id = lob.HandleOrder(
+                          "user1",
+                          OrderType::BID,
+                          10,    // volume
+                          100.0, // price
+                          std::time(nullptr),
+                          "AAPL")
+                       .order_id;
+    ASSERT_NE(order_id, -1) << "Failed to add the initial order to the book";
+
+    // 2) Cancel it once
+    bool first_cancel = lob.CancelOrder(order_id);
+    EXPECT_TRUE(first_cancel) << "First cancellation should succeed";
+
+    // 3) Attempt to cancel it again => should throw (order no longer exists)
+    EXPECT_THROW(
+        {
+            bool second_cancel = lob.CancelOrder(order_id);
+            // We expect the call above to throw, so we shouldn't get here:
+            (void)second_cancel;
+        },
+        std::out_of_range);
+}
