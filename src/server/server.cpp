@@ -84,6 +84,7 @@ void Server::worker_thread()
         handle_client(client_socket);
     }
 }
+
 void Server::handle_client(int client_socket)
 {
     char buffer[2048] = {0}; // Increased buffer size for large responses
@@ -94,20 +95,20 @@ void Server::handle_client(int client_socket)
         int bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
         if (bytes_received <= 0)
         {
-            // std::cout << "Client disconnected.\n";
             close(client_socket);
             return;
         }
+
+        nlohmann::json response; // Declare outside try-catch
 
         try
         {
             std::string received_data(buffer);
             nlohmann::json request = nlohmann::json::parse(received_data);
-            nlohmann::json response;
 
             std::string action = request["action"];
 
-            std::cout << "Handling request: " << request["action"] << '\n';
+            std::cout << "Handling request: " << action << '\n';
 
             if (action == "get_tickers")
             {
@@ -118,19 +119,29 @@ void Server::handle_client(int client_socket)
                 std::string ticker = request["ticker"];
                 TopOfBook top = exchange.GetTopOfBook(ticker);
 
-                std::cout << "bid_price " << top.bid_price << "\n";
-                std::cout << "ask_price " << top.ask_price << "\n";
                 response["has_top"] = top.book_has_top;
                 response["bid_price"] = top.bid_price;
                 response["ask_price"] = top.ask_price;
                 response["bid_volume"] = top.bid_volume;
                 response["ask_volume"] = top.ask_volume;
+                std::cout << "Ticker: " << ticker << "\n";
+                std::cout << "BID: " << top.bid_price << " vol: " << top.bid_volume << "\n";
+                std::cout << "ASK: " << top.ask_price << " vol: " << top.ask_volume << "\n";
             }
             else if (action == "get_volume")
             {
                 std::string ticker = request["ticker"];
                 double price = request["price"];
-                OrderType order_type = static_cast<OrderType>(request["order_type"]);
+                int side = static_cast<int>(request["order_type"]);
+                OrderType order_type;
+                if (side == 1)
+                {
+                    order_type = OrderType::ASK;
+                }
+                else
+                {
+                    order_type = OrderType::BID;
+                }
                 int volume = exchange.GetVolume(ticker, price, order_type);
                 response["volume"] = volume;
             }
@@ -161,6 +172,7 @@ void Server::handle_client(int client_socket)
             {
                 std::string user_id = request["user_id"];
                 OrderType order_type = static_cast<OrderType>(request["order_type"]);
+
                 int volume = request["volume"];
                 double price = request["price"];
                 std::string ticker = request["ticker"];
@@ -179,6 +191,17 @@ void Server::handle_client(int client_socket)
                                                   {"price", trade.price},
                                                   {"volume", trade.volume},
                                                   {"timestamp", trade.timestamp}});
+                }
+
+                std::cout << "ORDER ADDED TO BOOK" << result.order_added_to_book << "\n";
+                std::cout << "From: " << user_id << "\n";
+                if (order_type == OrderType::ASK)
+                {
+                    std::cout << "Side: " << "ASK" << "\n";
+                }
+                else
+                {
+                    std::cout << "Side: " << "BID" << "\n";
                 }
             }
             else if (action == "get_trades_by_user")
@@ -206,16 +229,15 @@ void Server::handle_client(int client_socket)
             {
                 response["error"] = "Unknown action";
             }
-
-            std::string response_str = response.dump();
-            send(client_socket, response_str.c_str(), response_str.size(), 0);
         }
         catch (const std::exception &e)
         {
             std::cerr << "Error processing request: " << e.what() << std::endl;
-            response["error"] = "Unknown action";
-            std::string response_str = response.dump();
-            send(client_socket, response_str.c_str(), response_str.size(), 0);
+            response["error"] = "Exception caught during processing";
         }
+
+        // Send the response outside try/catch
+        std::string response_str = response.dump();
+        send(client_socket, response_str.c_str(), response_str.size(), 0);
     }
 }

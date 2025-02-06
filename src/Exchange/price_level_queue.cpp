@@ -44,7 +44,14 @@ bool PriceLevelQueue::HasOrders() const
 
 void PriceLevelQueue::RemoveOrder(OrderNode &order)
 {
-    std::cout << "Inside PLQ, trying to cancel: " << order.order_id << std::endl;
+    std::cout << "[PLQ] Trying to cancel order: " << order.order_id << std::endl;
+
+    // Check if the order is actually part of this PriceLevelQueue
+    if (order.prev == nullptr && order.next == nullptr)
+    {
+        std::cerr << "[ERROR] Order " << order.order_id << " is already removed or invalid." << std::endl;
+        return;
+    }
 
     OrderNode *earlier_node_ptr = order.prev;
     OrderNode *ltr_node_ptr = order.next;
@@ -62,10 +69,13 @@ void PriceLevelQueue::RemoveOrder(OrderNode &order)
     order.prev = nullptr;
     order.next = nullptr;
 
+    std::cout << "[PLQ] Order " << order.order_id << " removed successfully." << std::endl;
+
     // Check if PLQ is empty
     if (front.next == &back)
     {
         has_orders = false;
+        std::cout << "[PLQ] PriceLevelQueue is now empty." << std::endl;
     }
 }
 

@@ -428,12 +428,11 @@ TopOfBook LimitOrderBook::GetTopOfBook()
     // Otherwise, we have at least one side
     //    If no ask, we keep ask_price=0, ask_volume=0
     //    If no bid, we keep bid_price=0, bid_volume=0
-    return TopOfBook(
-        true,
-        best_ask_price,
-        best_ask_volume,
-        best_bid_price,
-        best_bid_volume);
+    std::cout << "INSIDE LOB" << "\n";
+    std::cout << "BID: " << best_bid_price << " " << best_bid_volume << "\n";
+    std::cout << "ASK: " << best_ask_price << " " << best_ask_volume << "\n";
+
+    return TopOfBook(true, best_ask_price, best_ask_volume, best_bid_price, best_bid_volume);
 }
 
 std::vector<Trade> LimitOrderBook::GetPreviousTrades(int num_previous_trades)
