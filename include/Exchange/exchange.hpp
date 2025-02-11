@@ -7,7 +7,6 @@
 #include "exchange/order_result.hpp"
 #include "exchange/limit_order_book.hpp"
 
-// std headers
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
